@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>NEET 2027 Study Dashboard</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+
+<style>
+:root{
+--bg:#eafff4;
+--card:#ffffff;
+--text:#0f172a;
+--muted:#64748b;
+--high:#ef4444;
+--mid:#f59e0b;
+--low:#22c55e;
+--accent:#22c55e;
+}
+
+*{box-sizing:border-box;font-family:Inter,sans-serif}
+body{margin:0;background:var(--bg);color:var(--text)}
+.container{max-width:1200px;margin:auto;padding:30px}
+
+.grid{display:grid;grid-template-columns:2fr 1fr;gap:20px}
+.card{
+background:var(--card);
+border-radius:20px;
+padding:20px;
+box-shadow:0 10px 30px rgba(0,0,0,.06)
+}
+
+h1{margin:0}
+small{color:var(--muted)}
+
+/* TASK */
+.task{
+display:flex;
+justify-content:space-between;
+align-items:center;
+padding:14px;
+border-radius:14px;
+margin-bottom:12px;
+border-left:6px solid;
+background:#f8fafc;
+transition:.2s
+}
+.task.high{border-color:var(--high)}
+.task.mid{border-color:var(--mid)}
+.task.low{border-color:var(--low)}
+
+.task.done{
+opacity:.6;
+text-decoration:line-through;
+background:#ecfeff
+}
+
+.tick{
+cursor:pointer;
+font-size:1.2rem;
+}
+
+.add-btn{
+width:100%;
+border:2px dashed var(--accent);
+padding:10px;
+border-radius:14px;
+background:none;
+font-weight:600;
+color:var(--accent);
+cursor:pointer
+}
+
+/* MODAL */
+.modal{
+position:fixed;
+inset:0;
+background:rgba(0,0,0,.4);
+display:none;
+align-items:center;
+justify-content:center
+}
+.modal-box{
+background:white;
+padding:20px;
+border-radius:16px;
+width:330px
+}
+.option{
+padding:10px;
+border-radius:12px;
+background:#f1f5f9;
+margin-bottom:8px;
+cursor:pointer;
+text-align:center
+}
+.option:hover{background:#dcfce7}
+input,textarea,select{
+width:100%;
+padding:8px;
+margin-bottom:10px;
+border-radius:10px;
+border:1px solid #e5e7eb
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+<h1>👨‍⚕️ Shashwat Rai</h1>
+<small>NEET 2027 • Class 11 PCB</small>
+
+<div class="grid">
+
+<!-- LEFT -->
+<div class="card">
+<h2>📅 Today</h2>
+<div id="today"></div>
+<button class="add-btn" onclick="openModal()">+ Add Task</button>
+
+<hr style="margin:20px 0">
+
+<h2>📆 Yesterday</h2>
+<div id="yesterday"></div>
+</div>
+
+<!-- RIGHT -->
+<div class="card">
+<h2>📊 Overview</h2>
+<p id="time">Study Time: 0 min</p>
+<p id="dist">Theory: 0 | Practice: 0 | Revision: 0</p>
+</div>
+
+</div>
+</div>
+
+<!-- MODAL -->
+<div class="modal" id="modal">
+<div class="modal-box" id="modalBox"></div>
+</div>
+
+<script>
+const syllabus={
+Biology:["Living World","Biological Classification","Plant Kingdom","Animal Kingdom","Cell","Biomolecules"],
+Physics:["Kinematics","Laws of Motion","WEP","Thermodynamics","Oscillations"],
+Chemistry:["Mole Concept","Atomic Structure","Chemical Bonding","Thermodynamics","Hydrocarbons"]
+};
+
+let tasks=JSON.parse(localStorage.getItem("tasks"))||[];
+let step=0,newTask={};
+
+function todayDate(d=0){
+const x=new Date();
+x.setDate(x.getDate()+d);
+return x.toISOString().split("T")[0];
+}
+
+function openModal(){
+step=0;
+newTask={date:todayDate()};
+document.getElementById("modal").style.display="flex";
+nextStep();
+}
+
+function nextStep(){
+const box=document.getElementById("modalBox");
+box.innerHTML="";
+
+if(step===0){
+box.innerHTML="<h3>Select Subject</h3>";
+Object.keys(syllabus).forEach(s=>{
+const d=document.createElement("div");
+d.className="option";
+d.textContent=s;
+d.onclick=()=>{newTask.subject=s;step++;nextStep()};
+box.appendChild(d);
+});
+}
+
+else if(step===1){
+box.innerHTML="<h3>Select Chapter</h3>";
+syllabus[newTask.subject].forEach(c=>{
+const d=document.createElement("div");
+d.className="option";
+d.textContent=c;
+d.onclick=()=>{newTask.chapter=c;step++;nextStep()};
+box.appendChild(d);
+});
+}
+
+else if(step===2){
+box.innerHTML=`
+<h3>Task Details</h3>
+<input id="name" placeholder="Task name">
+<textarea id="desc" placeholder="Description"></textarea>
+<select id="type">
+<option>Theory</option>
+<option>Practice</option>
+<option>Revision</option>
+</select>
+<select id="pri">
+<option value="high">High</option>
+<option value="mid">Medium</option>
+<option value="low">Low</option>
+</select>
+<input id="time" type="number" placeholder="Time (min)">
+<button class="add-btn" onclick="saveTask()">Save Task</button>
+`;
+}
+}
+
+function saveTask(){
+newTask.name=name.value;
+newTask.desc=desc.value;
+newTask.type=type.value;
+newTask.priority=pri.value;
+newTask.time=Number(time.value);
+newTask.done=false;
+
+tasks.push(newTask);
+localStorage.setItem("tasks",JSON.stringify(tasks));
+document.getElementById("modal").style.display="none";
+render();
+}
+
+function render(){
+let tBox=document.getElementById("today");
+let yBox=document.getElementById("yesterday");
+tBox.innerHTML="";yBox.innerHTML="";
+
+let time=0,t=0,p=0,r=0;
+
+tasks.forEach((x,i)=>{
+time+=x.time;
+if(x.type==="Theory")t++;
+if(x.type==="Practice")p++;
+if(x.type==="Revision")r++;
+
+const div=document.createElement("div");
+div.className=`task ${x.priority} ${x.done?"done":""}`;
+div.innerHTML=`
+<div>
+<b>${x.name}</b><br>
+<small>${x.subject} • ${x.chapter}</small><br>
+<small>${x.type} • ${x.time} min</small>
+</div>
+<div class="tick">✔</div>
+`;
+
+div.querySelector(".tick").onclick=()=>{
+x.done=!x.done;
+localStorage.setItem("tasks",JSON.stringify(tasks));
+render();
+};
+
+(x.date===todayDate()?tBox:yBox).appendChild(div);
+});
+
+document.getElementById("time").textContent=`Study Time: ${time} min`;
+document.getElementById("dist").textContent=`Theory: ${t} | Practice: ${p} | Revision: ${r}`;
+}
+
+render();
+</script>
+
+</body>
+</html>
